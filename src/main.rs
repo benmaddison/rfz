@@ -85,7 +85,7 @@ fn index(args: &ArgMatches) -> Result<(), DocumentError> {
                             .with_threads(jobs)
                             .map(|doc| doc.fmt_line()) {
         match result {
-            Ok(line) => if let Err(_) = writeln!(stdout_writer, "{}", line) {
+            Ok(line) => if writeln!(stdout_writer, "{}", line).is_err() {
                 return Ok(())
             },
             Err(e) => return Err(e)

@@ -37,7 +37,7 @@ impl Document {
         };
         let (id, version) = match file_name.strip_suffix(".html") {
             Some(name) => {
-                let mut split = name.rsplitn(2, "-")
+                let mut split = name.rsplitn(2, '-')
                                     .collect::<Vec<&str>>();
                 split.reverse();
                 (
@@ -52,16 +52,16 @@ impl Document {
         Some(
             Ok(
                 Document {
-                    id: id,
-                    version: version,
-                    path: path,
+                    id,
+                    version,
+                    path,
                     meta: AtomicLazyCell::new()
                 }
             )
         )
     }
 
-    pub fn ensure_meta(self: &Self) -> Result<&Self, DocumentError> {
+    pub fn ensure_meta(&self) -> Result<&Self, DocumentError> {
         if ! self.meta.filled() {
             let html = kuchiki::parse_html().from_utf8().from_file(&self.path)?;
             let meta = Metadata::from_html(html)?;
@@ -77,23 +77,23 @@ impl Document {
         Ok(self)
     }
 
-    pub fn id(self: &Self) -> &String {
+    pub fn id(&self) -> &String {
         &self.id
     }
 
-    pub fn version(self: &Self) -> &i8 {
+    pub fn version(&self) -> &i8 {
         &self.version
     }
 
-    pub fn path(self: &Self) -> &PathBuf {
+    pub fn path(&self) -> &PathBuf {
         &self.path
     }
 
-    pub fn meta(self: &Self) -> Result<&Metadata, DocumentError> {
+    pub fn meta(&self) -> Result<&Metadata, DocumentError> {
         Ok(&self.ensure_meta()?.meta.borrow().unwrap())
     }
 
-    pub fn fmt_line(self: &Self) -> Result<String, DocumentError> {
+    pub fn fmt_line(&self) -> Result<String, DocumentError> {
         let mut output = format!("{} ", self.path().to_str().unwrap());
         if self.id.starts_with("draft") {
             output.push_str(&format!("{} (version {}) ",
@@ -108,7 +108,7 @@ impl Document {
         Ok(output)
     }
 
-    pub fn fmt_summary(self: &Self) -> Result<String, DocumentError> {
+    pub fn fmt_summary(&self) -> Result<String, DocumentError> {
         let mut output = format!("{} ", self.path().to_str().unwrap());
         if self.id.starts_with("draft") {
             output.push_str(&format!("{} (version {})\n\n",
@@ -171,8 +171,8 @@ impl Metadata {
         Ok(Metadata(meta))
     }
 
-    fn fmt(self: &Self, attr_sep: &str, keyval_sep: &str, val_sep: &str, replace_nl: bool) -> String {
-        (&self.0).into_iter().map(
+    fn fmt(&self, attr_sep: &str, keyval_sep: &str, val_sep: &str, replace_nl: bool) -> String {
+        (&self.0).iter().map(
             |(key, value)| -> String {
                 format!(
                     "{}{}{}",
@@ -192,11 +192,11 @@ impl Metadata {
         ).collect::<Vec<String>>().join(attr_sep)
     }
 
-    fn fmt_line(self: &Self) -> String {
+    fn fmt_line(&self) -> String {
         format!("<{}>", self.fmt(" // ", ": ", "; ", true))
     }
 
-    fn fmt_summary(self: &Self) -> String {
+    fn fmt_summary(&self) -> String {
         self.fmt("\n\n", ":\n", ";\n", false)
     }
 }

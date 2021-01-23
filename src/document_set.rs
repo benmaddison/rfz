@@ -37,7 +37,7 @@ impl Collection {
         Ok(Collection(collection))
     }
 
-    pub fn to_map(self: &Self) -> Result<CollectionMap, DocumentError> {
+    pub fn to_map(&self) -> Result<CollectionMap, DocumentError> {
         let mut map = HashMap::new();
         for doc in self {
             match map.entry(doc.id()) {
@@ -60,7 +60,7 @@ impl IntoIterator for Collection {
     type Item = Document;
     type IntoIter = vec::IntoIter<Document>;
 
-    fn into_iter(self: Self) -> Self::IntoIter {
+    fn into_iter(self) -> Self::IntoIter {
         self.0.into_iter()
     }
 }
@@ -69,8 +69,8 @@ impl<'a> IntoIterator for &'a Collection {
     type Item = &'a Document;
     type IntoIter = slice::Iter<'a, Document>;
 
-    fn into_iter(self: Self) -> Self::IntoIter {
-        (&self.0).into_iter()
+    fn into_iter(self) -> Self::IntoIter {
+        (&self.0).iter()
     }
 }
 
@@ -78,8 +78,8 @@ impl<'a> IntoIterator for &'a mut Collection {
     type Item = &'a mut Document;
     type IntoIter = slice::IterMut<'a, Document>;
 
-    fn into_iter(self: Self) -> Self::IntoIter {
-        (&mut self.0).into_iter()
+    fn into_iter(self) -> Self::IntoIter {
+        (&mut self.0).iter_mut()
     }
 }
 
@@ -87,7 +87,7 @@ impl<'a> IntoIterator for &'a mut Collection {
 pub struct CollectionMap<'a>(HashMap<&'a String, BTreeMap<&'a i8, &'a Document>>);
 
 impl CollectionMap<'_> {
-    pub fn newest(self: Self, count: u8) -> Collection {
+    pub fn newest(self, count: u8) -> Collection {
         let mut collection = Vec::new();
         for versions in self.0.values() {
             for doc in versions.values().take(count.into()) {
