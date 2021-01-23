@@ -1,0 +1,10 @@
+[Unit]
+Description=rfz document synchronization timer
+
+[Timer]
+OnBootSec=5m
+OnUnitActiveSec=60m
+Unit=rfz-sync.service
+
+[Install]
+WantedBy=timers.target

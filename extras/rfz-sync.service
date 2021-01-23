@@ -1,0 +1,6 @@
+[Unit]
+Description=rfz document synchronization service
+
+[Service]
+Type=oneshot
+ExecStart=rfz sync
