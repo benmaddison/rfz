@@ -14,23 +14,23 @@ impl Collection {
     pub fn from_dir(path: PathBuf) -> Result<Self, DocumentError> {
         let dir = match fs::read_dir(path) {
             Ok(dir) => dir,
-            Err(e) => return Err(DocumentError::SetError(e))
+            Err(e) => return Err(DocumentError::SetError(e)),
         };
         let mut collection = Vec::new();
         for dir_entry in dir {
             let doc_path = match dir_entry {
                 Ok(e) => e.path(),
-                Err(_) => continue
+                Err(_) => continue,
             };
-            if ! doc_path.is_file() {
+            if !doc_path.is_file() {
                 continue;
             }
             let doc = match Document::from_path(doc_path) {
                 Some(result) => match result {
                     Ok(doc) => doc,
-                    Err(e) => return Err(e)
+                    Err(e) => return Err(e),
                 },
-                None => continue
+                None => continue,
             };
             collection.push(doc);
         }
@@ -45,13 +45,13 @@ impl Collection {
                     let mut map = BTreeMap::new();
                     map.insert(doc.version(), doc);
                     e.insert(map);
-                },
+                }
                 hash_map::Entry::Occupied(mut e) => {
                     let map = e.get_mut();
                     map.insert(doc.version(), doc);
                 }
             };
-        };
+        }
         Ok(CollectionMap(map))
     }
 }
