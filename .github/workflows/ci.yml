@@ -110,6 +110,6 @@ jobs:
           args: --all
         env:
           CARGO_INCREMENTAL: 0
-          RUST_FLAGS: "-Zinstrument-coverage"
+          RUSTFLAGS: "-Zinstrument-coverage"
       - name: gather
         uses: actions-rs/grcov@v0.1
