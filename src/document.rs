@@ -220,23 +220,116 @@ pub enum MetadataAttr {
 mod test {
     use super::*;
 
-    use std::path::PathBuf;
-
-    fn resource_dir() -> PathBuf {
-        let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-        d.push("tests/resources");
-        d
-    }
+    use crate::test::resource_path;
 
     #[test]
     fn test_well_formed_rfc() -> Result<(), DocumentError> {
-        let mut path = resource_dir();
-        path.push("rfc6468.html");
+        let file = "rfc6468.html";
+        let path = resource_path(file);
         let test_path = path.clone();
         let doc = Document::from_path(path).unwrap()?;
         assert_eq!("rfc6468", doc.id());
         assert_eq!(&0, doc.version());
         assert_eq!(&test_path, doc.path());
+        let _meta = doc.meta()?;
+        let strings = &[
+            file,
+            "RFC6468",
+            "urn:ietf:rfc:6468",
+            "Sieve Notification Mechanism: SIP MESSAGE",
+            "Alexey Melnikov <alexey.melnikov@isode.com>",
+            "February, 2012",
+            "draft-melnikov-sieve-notify-sip-message",
+            "This document describes a profile of the Sieve extension for",
+            "notifications, to allow notifications to be sent over the SIP MESSAGE.",
+        ];
+        for out in &[doc.fmt_line()?, doc.fmt_summary()?] {
+            for string in strings {
+                assert!(
+                    out.contains(string),
+                    "'{}' not found in output",
+                    string
+                );
+            }
+        }
         Ok(())
+    }
+
+    #[test]
+    fn test_well_formed_draft() -> Result<(), DocumentError> {
+        let file = "draft-ietf-sidrops-rpkimaxlen-05.html";
+        let path = resource_path(file);
+        let test_path = path.clone();
+        let doc = Document::from_path(path).unwrap()?;
+        assert_eq!("draft-ietf-sidrops-rpkimaxlen", doc.id());
+        assert_eq!(&(-5), doc.version());
+        assert_eq!(&test_path, doc.path());
+        let _meta = doc.meta()?;
+        let strings = &[
+            file,
+            "draft-ietf-sidrops-rpkimaxlen",
+            "(version 5)",
+            "urn:ietf:id:ietf-sidrops-rpkimaxlen",
+            "The Use of Maxlength in the RPKI",
+            "Snijders, Job;",
+            "Gilad, Yossi;",
+            "Maddison, Ben;",
+            "Goldberg, Sharon;",
+            "Sriram, Kotikalapudi",
+            "2020-11-02",
+            "draft-yossigi-rpkimaxlen",
+            "This document recommends ways to reduce forged-origin hijack attack",
+            "surface by prudently limiting the set of IP prefixes that are included",
+            "in a Route Origin Authorization (ROA). One recommendation is to avoid",
+            "using the maxLength attribute in ROAs except in some specific cases.",
+            "The recommendations complement and extend those in RFC 7115. The",
+            "document also discusses creation of ROAs for facilitating the use of",
+            "Distributed Denial of Service (DDoS) mitigation services.",
+            "Considerations related to ROAs and origin validation in the context of",
+            "destination-based Remote Triggered Black Hole (RTBH) filtering are",
+            "also highlighted."
+        ];
+        for out in &[doc.fmt_line()?, doc.fmt_summary()?] {
+            for string in strings {
+                assert!(
+                    out.contains(string),
+                    "'{}' not found in output",
+                    string
+                );
+            }
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn test_bad_path() {
+        let file = "...";
+        let path = resource_path(file);
+        let maybe_doc = Document::from_path(path);
+        assert!(matches!(maybe_doc, None))
+    }
+
+    #[test]
+    fn test_no_html_suffix() {
+        let file = "not-found.xhtml";
+        let path = resource_path(file);
+        let maybe_doc = Document::from_path(path);
+        assert!(matches!(maybe_doc, None))
+    }
+
+    #[test]
+    fn test_not_found() {
+        let file = "not-found.html";
+        let path = resource_path(file);
+        let maybe_doc = Document::from_path(path).unwrap().unwrap();
+        assert!(matches!(maybe_doc.ensure_meta(), Err(DocumentError::ParseError(_))))
+    }
+
+    #[test]
+    fn test_duplicate_attributes() {
+        let file = "draft-duplicates-00.html";
+        let path = resource_path(file);
+        let maybe_doc = Document::from_path(path).unwrap().unwrap();
+        assert!(matches!(maybe_doc.ensure_meta(), Err(DocumentError::DuplicateAttribute(_))))
     }
 }

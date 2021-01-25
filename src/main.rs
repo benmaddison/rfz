@@ -152,3 +152,20 @@ fn sync(args: &ArgMatches) -> Result<(), DocumentError> {
         Err(e) => Err(DocumentError::SyncError(e)),
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    pub fn resource_path(name: &str) -> PathBuf {
+        let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        d.push("tests/resources");
+        d.push(name);
+        d
+    }
+
+    #[test]
+    fn test_dummy() {
+        assert_eq!(2+2, 4)
+    }
+}

@@ -97,3 +97,15 @@ impl CollectionMap<'_> {
         Collection(collection)
     }
 }
+
+#[cfg(test)]
+mod test {
+    // use super::*;
+
+    // use crate::test::resource_path;
+
+    #[test]
+    fn test_dummy() {
+        assert_eq!(2+2, 4)
+    }
+}
