@@ -115,6 +115,7 @@ jobs:
         uses: actions-rs/install@v0.1
         with:
           crate: grcov
+          use-tool-cache: true
       - name: gather
         run: "grcov . --binary-path target/debug/ --source-dir . --branch --ignore-not-existing --output-type lcov --output-path coverage.lcov --prefix-dir /home/user/build/ --ignore '/*'"
       - name: upload
