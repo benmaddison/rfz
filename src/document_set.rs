@@ -91,12 +91,30 @@ impl CollectionMap<'_> {
 
 #[cfg(test)]
 mod test {
-    // use super::*;
+    use super::*;
 
-    // use crate::test::resource_path;
+    use crate::test::resource_path;
 
     #[test]
-    fn test_dummy() {
-        assert_eq!(2+2, 4)
+    fn test_construct_collection() -> Result<(), DocumentError> {
+        let path = resource_path("");
+        let collection = Collection::from_dir(path)?;
+        assert_eq!(collection.into_iter().count(), 4);
+        Ok(())
+    }
+
+    #[test]
+    fn test_newest_collection() -> Result<(), DocumentError> {
+        let path = resource_path("");
+        let newest = Collection::from_dir(path)?.to_map()?.newest(1);
+        assert_eq!(newest.into_iter().count(), 3);
+        Ok(())
+    }
+
+    #[test]
+    fn test_bad_path() {
+        let path = resource_path("not-found");
+        let maybe_collection = Collection::from_dir(path);
+        assert!(matches!(maybe_collection, Err(DocumentError::SetError(_))))
     }
 }
