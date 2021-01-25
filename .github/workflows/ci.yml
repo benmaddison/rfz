@@ -117,3 +117,9 @@ jobs:
           crate: grcov
       - name: gather
         run: "grcov . --binary-path target/debug/ --source-dir . --branch --ignore-not-existing --output-type lcov --output-path coverage.lcov --prefix-dir /home/user/build/ --ignore '/*'"
+      - name: upload
+        uses: codecov/codecov-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage.lcov
+          verbose: true
