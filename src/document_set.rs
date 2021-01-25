@@ -74,15 +74,6 @@ impl<'a> IntoIterator for &'a Collection {
     }
 }
 
-impl<'a> IntoIterator for &'a mut Collection {
-    type Item = &'a mut Document;
-    type IntoIter = slice::IterMut<'a, Document>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        (&mut self.0).iter_mut()
-    }
-}
-
 #[derive(Debug)]
 pub struct CollectionMap<'a>(HashMap<&'a String, BTreeMap<&'a i8, &'a Document>>);
 
