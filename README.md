@@ -3,6 +3,11 @@
 An indexer and metadata viewer for repositories of IETF documents synced to the
 local file system.
 
+[![crates.io](http://meritbadge.herokuapp.com/rfz)](https://crates.io/crates/rfz)
+[![ci](https://github.com/benmaddison/rfz/workflows/ci/badge.svg)](https://github.com/benmaddison/rfz/actions?query=workflow%3Aci)
+[![audit](https://github.com/benmaddison/rfz/workflows/audit/badge.svg)](https://github.com/benmaddison/rfz/actions?query=workflow%3Aaudit)
+[![codecov](https://codecov.io/gh/benmaddison/rfz/branch/master/graph/badge.svg?token=ktq7dOYD49)](https://codecov.io/gh/benmaddison/rfz)
+
 ## Installation
 
 Install via cargo:
@@ -26,7 +31,7 @@ The path to this directory can be set with `--dir` and defaults to
 `rfz sync` will create the directory if it does not already exist, and call
 `rsync` to retrieve the contents.
 
-Example systemd units to run `rfz sync` every hour are included in `extras/`.
+Example `systemd` units to run `rfz sync` every hour are included in `extras/`.
 
 `rfz` can be used standalone, but is designed to be used along side `fzf` and a
 text-mode browser (e.g. `lynx` or `w3m`):
