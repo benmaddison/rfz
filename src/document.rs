@@ -245,11 +245,7 @@ mod test {
         ];
         for out in &[doc.fmt_line()?, doc.fmt_summary()?] {
             for string in strings {
-                assert!(
-                    out.contains(string),
-                    "'{}' not found in output",
-                    string
-                );
+                assert!(out.contains(string), "'{}' not found in output", string);
             }
         }
         Ok(())
@@ -287,15 +283,11 @@ mod test {
             "Distributed Denial of Service (DDoS) mitigation services.",
             "Considerations related to ROAs and origin validation in the context of",
             "destination-based Remote Triggered Black Hole (RTBH) filtering are",
-            "also highlighted."
+            "also highlighted.",
         ];
         for out in &[doc.fmt_line()?, doc.fmt_summary()?] {
             for string in strings {
-                assert!(
-                    out.contains(string),
-                    "'{}' not found in output",
-                    string
-                );
+                assert!(out.contains(string), "'{}' not found in output", string);
             }
         }
         Ok(())
@@ -322,7 +314,10 @@ mod test {
         let file = "not-found.html";
         let path = resource_path(file);
         let maybe_doc = Document::from_path(path).unwrap().unwrap();
-        assert!(matches!(maybe_doc.ensure_meta(), Err(DocumentError::ParseError(_))))
+        assert!(matches!(
+            maybe_doc.ensure_meta(),
+            Err(DocumentError::ParseError(_))
+        ))
     }
 
     #[test]
@@ -330,6 +325,9 @@ mod test {
         let file = "draft-duplicates-00.html";
         let path = resource_path(file);
         let maybe_doc = Document::from_path(path).unwrap().unwrap();
-        assert!(matches!(maybe_doc.ensure_meta(), Err(DocumentError::DuplicateAttribute(_))))
+        assert!(matches!(
+            maybe_doc.ensure_meta(),
+            Err(DocumentError::DuplicateAttribute(_))
+        ))
     }
 }
