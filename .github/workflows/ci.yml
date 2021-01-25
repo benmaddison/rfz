@@ -114,6 +114,6 @@ jobs:
       - name: install grcov
         uses: actions-rs/install@v0.1
         with:
-          create: grcov
+          crate: grcov
       - name: gather
         run: "grcov . --binary-path target/debug/ --source-dir . --branch --ignore-not-existing --output-type lcov --output-path coverage.lcov --prefix-dir /home/user/build/ --ignore '/*'"
