@@ -11,12 +11,13 @@ mod document;
 mod document_set;
 mod errors;
 
+use cli::{Cli, Defaults};
 use errors::DocumentError;
 
 fn main() -> Result<(), DocumentError> {
-    let defaults = cli::Defaults::get()?;
-    let (command, args) = cli::parse(&defaults)?;
-    command(&args)
+    let defaults = Defaults::get()?;
+    let cli = Cli::init(&defaults);
+    cli.run()
 }
 
 #[cfg(test)]
