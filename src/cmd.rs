@@ -174,4 +174,35 @@ mod test {
         let exec = CmdExec::init("sync", &args)?;
         exec.run()
     }
+
+    #[test]
+    fn test_not_implemented() {
+        let args = DummyArgs {
+            jobs: None,
+            dir: None,
+            path: None,
+            rsync_cmd: None,
+            rsync_remote: None,
+        };
+        match CmdExec::init("invalid", &args) {
+            Err(Error::ImplementationNotFound(_)) => (),
+            _ => panic!("Expected ImplementationNotFound error")
+        }
+    }
+
+    #[test]
+    fn test_document_not_found() {
+        let args = DummyArgs {
+            jobs: None,
+            dir: None,
+            path: Some(resource_path("not-found")),
+            rsync_cmd: None,
+            rsync_remote: None,
+        };
+        let exec = CmdExec::init("summary", &args).unwrap();
+        match exec.run() {
+            Err(Error::DocumentNotFound(_)) => (),
+            _ => panic!("Expected DocumentNotFound error")
+        }
+    }
 }
