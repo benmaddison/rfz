@@ -145,7 +145,7 @@ mod test {
             jobs: None,
             dir: Some(resource_path("")),
             path: None,
-            rsync_cmd: Some(String::from("/usr/bin/true")),
+            rsync_cmd: Some(String::from("/bin/true")),
             rsync_remote: Some(String::from("rsync.example.com::dummy")),
         };
         sync(&args)
