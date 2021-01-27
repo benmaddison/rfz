@@ -108,7 +108,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --all
+          args: --lib
         env:
           RUSTFLAGS: "-Zinstrument-coverage"
       - name: install grcov
@@ -117,10 +117,17 @@ jobs:
           crate: grcov
           use-tool-cache: true
       - name: gather
-        run: "grcov . --binary-path target/debug/ --source-dir . --branch --ignore-not-existing --output-type lcov --output-path coverage.lcov --prefix-dir /home/user/build/ --ignore '/*'"
+        run: "grcov . --binary-path target/debug/ \
+                      --source-dir . \
+                      --branch \
+                      --ignore-not-existing \
+                      --output-type lcov \
+                      --output-path coverage.lcov \
+                      --prefix-dir /home/user/build/ \
+                      --ignore '/*' \
+                      --excl-line 'panic!'"
       - name: upload
         uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: coverage.lcov
-          verbose: true
