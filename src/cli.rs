@@ -6,7 +6,7 @@ use std::str::FromStr;
 use clap::{crate_authors, crate_description, crate_name, crate_version};
 use directories::ProjectDirs;
 
-use crate::cmd::{select, ArgProvider};
+use crate::cmd::{ArgProvider, CmdExec};
 use crate::errors::{Error, Result};
 
 pub trait DefaultsProvider {
@@ -117,19 +117,14 @@ impl<'a> Cli<'a> {
     }
 
     pub fn run(&self) -> Result<()> {
-        let (func, args) = match self.0.subcommand() {
-            (subcommand, Some(sub_matches)) => match select(subcommand) {
-                Some(command) => (command, CliArgs::from(sub_matches)),
-                None => {
-                    return Err(Error::ImplementationNotFound(format!(
-                        "Failed to find an implementation for sub-command '{}'",
-                        subcommand
-                    )))
-                }
-            },
-            _ => return Err(Error::CliError("No sub-command was found".to_string())),
-        };
-        func(&args)
+        match self.0.subcommand() {
+            (subcommand, Some(sub_matches)) => {
+                let args = CliArgs::from(sub_matches);
+                let exec = CmdExec::init(subcommand, &args)?;
+                exec.run()
+            }
+            _ => Err(Error::CliError("No sub-command was found".to_string())),
+        }
     }
 }
 

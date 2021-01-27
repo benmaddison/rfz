@@ -16,14 +16,31 @@ pub trait ArgProvider {
     fn rsync_remote(&self) -> &str;
 }
 
-pub type Cmd = fn(&dyn ArgProvider) -> Result<()>;
+type Cmd = fn(&dyn ArgProvider) -> Result<()>;
 
-pub fn select(command: &str) -> Option<Cmd> {
-    match command {
-        "index" => Some(index),
-        "summary" => Some(summary),
-        "sync" => Some(sync),
-        _ => None,
+pub struct CmdExec<'a> {
+    func: Cmd,
+    args: &'a dyn ArgProvider,
+}
+
+impl<'a> CmdExec<'a> {
+    pub fn init(command: &str, args: &'a dyn ArgProvider) -> Result<Self> {
+        let func = match command {
+            "index" => index,
+            "summary" => summary,
+            "sync" => sync,
+            _ => {
+                return Err(Error::ImplementationNotFound(format!(
+                    "Failed to find an implementation for sub-command '{}'",
+                    command
+                )))
+            }
+        };
+        Ok(CmdExec { func, args })
+    }
+
+    pub fn run(&self) -> Result<()> {
+        (self.func)(self.args)
     }
 }
 
