@@ -37,7 +37,11 @@ impl Collection {
         Ok(Collection(collection))
     }
 
-    pub fn to_map(&self) -> Result<CollectionMap> {
+    pub fn newest(&self, count: u8) -> Self {
+        self.to_map().newest(count)
+    }
+
+    fn to_map(&self) -> CollectionMap {
         let mut map = HashMap::new();
         for doc in self {
             match map.entry(doc.id()) {
@@ -52,7 +56,7 @@ impl Collection {
                 }
             };
         }
-        Ok(CollectionMap(map))
+        CollectionMap(map)
     }
 }
 
@@ -75,10 +79,10 @@ impl<'a> IntoIterator for &'a Collection {
 }
 
 #[derive(Debug)]
-pub struct CollectionMap<'a>(HashMap<&'a String, BTreeMap<&'a i8, &'a Document>>);
+struct CollectionMap<'a>(HashMap<&'a String, BTreeMap<&'a i8, &'a Document>>);
 
 impl CollectionMap<'_> {
-    pub fn newest(self, count: u8) -> Collection {
+    fn newest(self, count: u8) -> Collection {
         let mut collection = Vec::new();
         for versions in self.0.values() {
             for doc in versions.values().take(count.into()) {
@@ -106,7 +110,7 @@ mod test {
     #[test]
     fn test_newest_collection() -> Result<()> {
         let path = resource_path("");
-        let newest = Collection::from_dir(path)?.to_map()?.newest(1);
+        let newest = Collection::from_dir(path)?.newest(1);
         assert_eq!(newest.into_iter().count(), 3);
         Ok(())
     }

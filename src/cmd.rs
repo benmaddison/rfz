@@ -38,7 +38,6 @@ fn index(args: &dyn ArgProvider) -> Result<()> {
     #[cfg(test)]
     let mut writer = std::io::sink();
     for result in collection
-        .to_map()?
         .newest(1)
         .with_threads(args.jobs())
         .map(|doc| doc.fmt_line())
