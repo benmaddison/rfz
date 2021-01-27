@@ -145,7 +145,8 @@ mod test {
             rsync_cmd: None,
             rsync_remote: None,
         };
-        index(&args)
+        let exec = CmdExec::init("index", &args)?;
+        exec.run()
     }
 
     #[test]
@@ -157,7 +158,8 @@ mod test {
             rsync_cmd: None,
             rsync_remote: None,
         };
-        summary(&args)
+        let exec = CmdExec::init("summary", &args)?;
+        exec.run()
     }
 
     #[test]
@@ -169,6 +171,7 @@ mod test {
             rsync_cmd: Some(String::from("/bin/true")),
             rsync_remote: Some(String::from("rsync.example.com::dummy")),
         };
-        sync(&args)
+        let exec = CmdExec::init("sync", &args)?;
+        exec.run()
     }
 }

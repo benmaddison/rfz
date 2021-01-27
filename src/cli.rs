@@ -162,6 +162,8 @@ impl ArgProvider for CliArgs<'_> {
 mod test {
     use super::*;
 
+    use crate::test::resource_path;
+
     use std::str::FromStr;
 
     struct DummyDefaults;
@@ -237,5 +239,14 @@ mod test {
             }
             _ => panic!("Cli parsing failed"),
         }
+    }
+
+    #[test]
+    fn test_exec_index() -> Result<()> {
+        let defaults = Defaults::get()?;
+        let dir = resource_path("");
+        let argv = Some(vec!["rfz", "index", "-d", dir.to_str().unwrap()]);
+        let cli = Cli::init_from(&defaults, argv).unwrap();
+        cli.run()
     }
 }
