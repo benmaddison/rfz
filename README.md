@@ -13,7 +13,7 @@ local file system.
 Install via cargo:
 
 ```bash
-$ cargo install --release .
+$ cargo install rfz
 ```
 
 `rsync` is required in order to use `rfz sync`.
