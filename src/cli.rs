@@ -188,15 +188,47 @@ mod test {
     }
 
     #[test]
-    fn test_dummy_defaults() {
+    fn test_dummy_index() {
         let defaults = DummyDefaults {};
         let argv = Some(vec!["rfz", "index"]);
         let cli = Cli::init_from(&defaults, argv).unwrap();
         match cli.0.subcommand() {
             (subcommand, Some(args)) => {
                 assert_eq!(subcommand, "index");
-                assert_eq!(args.value_of("jobs").unwrap(), "1");
-                assert_eq!(args.value_of("dir").unwrap(), "/home/foo/rfz");
+                let cli_args = CliArgs::from(args);
+                assert_eq!(cli_args.jobs(), 1);
+                assert_eq!(cli_args.dir(), PathBuf::from("/home/foo/rfz"));
+            }
+            _ => panic!("Cli parsing failed"),
+        }
+    }
+
+    #[test]
+    fn test_dummy_summary() {
+        let defaults = DummyDefaults {};
+        let argv = Some(vec!["rfz", "summary", "/home/foo/rfz/bar.html"]);
+        let cli = Cli::init_from(&defaults, argv).unwrap();
+        match cli.0.subcommand() {
+            (subcommand, Some(args)) => {
+                assert_eq!(subcommand, "summary");
+                let cli_args = CliArgs::from(args);
+                assert_eq!(cli_args.path(), PathBuf::from("/home/foo/rfz/bar.html"));
+            }
+            _ => panic!("Cli parsing failed"),
+        }
+    }
+
+    #[test]
+    fn test_dummy_sync() {
+        let defaults = DummyDefaults {};
+        let argv = Some(vec!["rfz", "sync"]);
+        let cli = Cli::init_from(&defaults, argv).unwrap();
+        match cli.0.subcommand() {
+            (subcommand, Some(args)) => {
+                assert_eq!(subcommand, "sync");
+                let cli_args = CliArgs::from(args);
+                assert_eq!(cli_args.rsync_cmd(), "rsync");
+                assert_eq!(cli_args.rsync_remote(), "rsync.tools.ietf.org::tools.html");
             }
             _ => panic!("Cli parsing failed"),
         }
