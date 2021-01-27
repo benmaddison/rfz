@@ -1,12 +1,13 @@
 use std::ffi::{OsStr, OsString};
 use std::path::PathBuf;
+use std::result;
 use std::str::FromStr;
 
 use clap::{crate_authors, crate_description, crate_name, crate_version};
 use directories::ProjectDirs;
 
 use crate::cmd::{select, ArgProvider};
-use crate::errors::DocumentError;
+use crate::errors::{Error, Result};
 
 pub trait DefaultsProvider {
     fn dir(&self) -> &OsStr;
@@ -19,10 +20,14 @@ pub struct Defaults {
 }
 
 impl Defaults {
-    pub fn get() -> Result<Self, DocumentError> {
+    pub fn get() -> Result<Self> {
         let dir = match ProjectDirs::from("", "", "rfz") {
             Some(dirs) => dirs.data_dir().as_os_str().to_owned(),
-            None => return Err(DocumentError::UserDirectories),
+            None => {
+                return Err(Error::UserDirectories(
+                    "Failed to infer user directory locations".to_string(),
+                ))
+            }
         };
         let jobs = num_cpus::get().to_string();
         Ok(Defaults { dir, jobs })
@@ -53,7 +58,7 @@ impl<'a> Cli<'a> {
     fn init_from(
         defaults: &'a dyn DefaultsProvider,
         argv: Option<Vec<&str>>,
-    ) -> Result<Self, clap::Error> {
+    ) -> result::Result<Self, clap::Error> {
         let app = clap::app_from_crate!()
             .setting(clap::AppSettings::SubcommandRequired)
             .arg(
@@ -111,13 +116,18 @@ impl<'a> Cli<'a> {
         Ok(Cli(args?))
     }
 
-    pub fn run(&self) -> Result<(), DocumentError> {
+    pub fn run(&self) -> Result<()> {
         let (func, args) = match self.0.subcommand() {
             (subcommand, Some(sub_matches)) => match select(subcommand) {
                 Some(command) => (command, CliArgs::from(sub_matches)),
-                None => return Err(DocumentError::NotFound),
+                None => {
+                    return Err(Error::ImplementationNotFound(format!(
+                        "Failed to find an implementation for sub-command '{}'",
+                        subcommand
+                    )))
+                }
             },
-            _ => return Err(DocumentError::NotFound),
+            _ => return Err(Error::CliError("No sub-command was found".to_string())),
         };
         func(&args)
     }
@@ -171,7 +181,7 @@ mod test {
     }
 
     #[test]
-    fn test_cli_defaults() -> Result<(), DocumentError> {
+    fn test_cli_defaults() -> Result<()> {
         let defaults = Defaults::get()?;
         assert!(usize::from_str(defaults.jobs()).unwrap() > 0);
         Ok(())

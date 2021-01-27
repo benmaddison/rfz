@@ -7,7 +7,7 @@ use ansi_term::Colour;
 use kuchiki::traits::*;
 use lazycell::AtomicLazyCell;
 
-use crate::errors::DocumentError;
+use crate::errors::{Error, Result};
 
 const SELECTOR: &str = "head>meta";
 
@@ -24,7 +24,7 @@ pub struct Document {
 }
 
 impl Document {
-    pub fn from_path(path: PathBuf) -> Option<Result<Document, DocumentError>> {
+    pub fn from_path(path: PathBuf) -> Option<Result<Document>> {
         let file_name = match path.file_name() {
             Some(name) => match name.to_str() {
                 Some(name) => name,
@@ -51,18 +51,17 @@ impl Document {
         }))
     }
 
-    pub fn ensure_meta(&self) -> Result<&Self, DocumentError> {
+    pub fn ensure_meta(&self) -> Result<&Self> {
         if !self.meta.filled() {
             let html = kuchiki::parse_html().from_utf8().from_file(&self.path)?;
             let meta = Metadata::from_html(html)?;
             match self.meta.fill(meta) {
                 Ok(()) => {}
                 Err(val) => {
-                    eprintln!(
-                        "Failed to set 'meta' field for document {:?}: {:?}",
+                    return Err(Error::MetadataRetrieval(format!(
+                        "Failed to save metadata for document {:?}: {:?}",
                         self, val
-                    );
-                    return Err(DocumentError::MetadataRetrieval);
+                    )))
                 }
             };
         }
@@ -81,11 +80,11 @@ impl Document {
         &self.path
     }
 
-    pub fn meta(&self) -> Result<&Metadata, DocumentError> {
+    pub fn meta(&self) -> Result<&Metadata> {
         Ok(&self.ensure_meta()?.meta.borrow().unwrap())
     }
 
-    pub fn fmt_line(&self) -> Result<String, DocumentError> {
+    pub fn fmt_line(&self) -> Result<String> {
         let mut output = format!("{} ", self.path().to_str().unwrap());
         if self.id.starts_with("draft") {
             output.push_str(&format!(
@@ -106,7 +105,7 @@ impl Document {
         Ok(output)
     }
 
-    pub fn fmt_summary(&self) -> Result<String, DocumentError> {
+    pub fn fmt_summary(&self) -> Result<String> {
         let mut output = format!("{} ", self.path().to_str().unwrap());
         if self.id.starts_with("draft") {
             output.push_str(&format!(
@@ -132,7 +131,7 @@ impl Document {
 pub struct Metadata(HashMap<String, MetadataAttr>);
 
 impl Metadata {
-    fn from_html(html: kuchiki::NodeRef) -> Result<Metadata, DocumentError> {
+    fn from_html(html: kuchiki::NodeRef) -> Result<Metadata> {
         let mut meta = HashMap::new();
         for node in html.select(SELECTOR)? {
             let attrs = node.attributes.borrow();
@@ -159,17 +158,18 @@ impl Metadata {
                     if multivalued {
                         match e.get_mut() {
                             MetadataAttr::One(_) => {
-                                let msg = format!(
+                                return Err(Error::AttributeTypeMismatch(format!(
                                     "Expected multivalued attribute type for '{}'",
                                     e.key()
-                                );
-                                return Err(DocumentError::AttributeType(msg));
+                                )))
                             }
                             MetadataAttr::Many(values) => values.push(value),
                         }
                     } else {
-                        let msg = format!("Got unexpected duplicate attribute '{}'", e.key());
-                        return Err(DocumentError::DuplicateAttribute(msg));
+                        return Err(Error::DuplicateAttribute(format!(
+                            "Got unexpected duplicate attribute '{}'",
+                            e.key()
+                        )));
                     }
                 }
             }
@@ -223,7 +223,7 @@ mod test {
     use crate::test::resource_path;
 
     #[test]
-    fn test_well_formed_rfc() -> Result<(), DocumentError> {
+    fn test_well_formed_rfc() -> Result<()> {
         let file = "rfc6468.html";
         let path = resource_path(file);
         let test_path = path.clone();
@@ -252,7 +252,7 @@ mod test {
     }
 
     #[test]
-    fn test_well_formed_draft() -> Result<(), DocumentError> {
+    fn test_well_formed_draft() -> Result<()> {
         let file = "draft-ietf-sidrops-rpkimaxlen-05.html";
         let path = resource_path(file);
         let test_path = path.clone();
@@ -316,7 +316,7 @@ mod test {
         let maybe_doc = Document::from_path(path).unwrap().unwrap();
         assert!(matches!(
             maybe_doc.ensure_meta(),
-            Err(DocumentError::ParseError(_))
+            Err(Error::DocumentParseError(_))
         ))
     }
 
@@ -327,7 +327,7 @@ mod test {
         let maybe_doc = Document::from_path(path).unwrap().unwrap();
         assert!(matches!(
             maybe_doc.ensure_meta(),
-            Err(DocumentError::DuplicateAttribute(_))
+            Err(Error::DuplicateAttribute(_))
         ))
     }
 }

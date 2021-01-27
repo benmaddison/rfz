@@ -6,7 +6,7 @@ use pipeliner::Pipeline;
 
 use crate::document::Document;
 use crate::document_set::Collection;
-use crate::errors::DocumentError;
+use crate::errors::{Error, Result};
 
 pub trait ArgProvider {
     fn jobs(&self) -> usize;
@@ -16,7 +16,7 @@ pub trait ArgProvider {
     fn rsync_remote(&self) -> &str;
 }
 
-pub type Cmd = fn(&dyn ArgProvider) -> Result<(), DocumentError>;
+pub type Cmd = fn(&dyn ArgProvider) -> Result<()>;
 
 pub fn select(command: &str) -> Option<Cmd> {
     match command {
@@ -27,7 +27,7 @@ pub fn select(command: &str) -> Option<Cmd> {
     }
 }
 
-fn index(args: &dyn ArgProvider) -> Result<(), DocumentError> {
+fn index(args: &dyn ArgProvider) -> Result<()> {
     let collection = match Collection::from_dir(args.dir()) {
         Ok(set) => set,
         Err(e) => return Err(e),
@@ -55,18 +55,23 @@ fn index(args: &dyn ArgProvider) -> Result<(), DocumentError> {
     Ok(())
 }
 
-fn summary(args: &dyn ArgProvider) -> Result<(), DocumentError> {
+fn summary(args: &dyn ArgProvider) -> Result<()> {
     match Document::from_path(args.path()) {
         Some(result) => match result {
             Ok(doc) => println!("{}", doc.fmt_summary()?),
             Err(e) => return Err(e),
         },
-        None => return Err(DocumentError::NotFound),
+        None => {
+            return Err(Error::DocumentNotFound(format!(
+                "Failed to create a valid document from path '{:?}'",
+                args.path()
+            )))
+        }
     }
     Ok(())
 }
 
-fn sync(args: &dyn ArgProvider) -> Result<(), DocumentError> {
+fn sync(args: &dyn ArgProvider) -> Result<()> {
     let status = Command::new(args.rsync_cmd())
         .arg("--archive")
         .arg("--compress")
@@ -79,7 +84,7 @@ fn sync(args: &dyn ArgProvider) -> Result<(), DocumentError> {
         .status();
     match status {
         Ok(_) => Ok(()),
-        Err(e) => Err(DocumentError::SyncError(e)),
+        Err(e) => Err(Error::SyncError(e)),
     }
 }
 
@@ -116,7 +121,7 @@ mod test {
     }
 
     #[test]
-    fn test_index_cmd() -> Result<(), DocumentError> {
+    fn test_index_cmd() -> Result<()> {
         let args = DummyArgs {
             jobs: Some(2),
             dir: Some(resource_path("")),
@@ -128,7 +133,7 @@ mod test {
     }
 
     #[test]
-    fn test_summary_cmd() -> Result<(), DocumentError> {
+    fn test_summary_cmd() -> Result<()> {
         let args = DummyArgs {
             jobs: None,
             dir: None,
@@ -140,7 +145,7 @@ mod test {
     }
 
     #[test]
-    fn test_sync_cmd() -> Result<(), DocumentError> {
+    fn test_sync_cmd() -> Result<()> {
         let args = DummyArgs {
             jobs: None,
             dir: Some(resource_path("")),

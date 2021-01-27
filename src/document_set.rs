@@ -5,16 +5,16 @@ use std::slice;
 use std::vec;
 
 use crate::document::Document;
-use crate::errors::DocumentError;
+use crate::errors::{Error, Result};
 
 #[derive(Debug)]
 pub struct Collection(Vec<Document>);
 
 impl Collection {
-    pub fn from_dir(path: PathBuf) -> Result<Self, DocumentError> {
+    pub fn from_dir(path: PathBuf) -> Result<Self> {
         let dir = match fs::read_dir(path) {
             Ok(dir) => dir,
-            Err(e) => return Err(DocumentError::SetError(e)),
+            Err(e) => return Err(Error::DirectoryReadError(e)),
         };
         let mut collection = Vec::new();
         for dir_entry in dir {
@@ -37,7 +37,7 @@ impl Collection {
         Ok(Collection(collection))
     }
 
-    pub fn to_map(&self) -> Result<CollectionMap, DocumentError> {
+    pub fn to_map(&self) -> Result<CollectionMap> {
         let mut map = HashMap::new();
         for doc in self {
             match map.entry(doc.id()) {
@@ -96,7 +96,7 @@ mod test {
     use crate::test::resource_path;
 
     #[test]
-    fn test_construct_collection() -> Result<(), DocumentError> {
+    fn test_construct_collection() -> Result<()> {
         let path = resource_path("");
         let collection = Collection::from_dir(path)?;
         assert_eq!(collection.into_iter().count(), 4);
@@ -104,7 +104,7 @@ mod test {
     }
 
     #[test]
-    fn test_newest_collection() -> Result<(), DocumentError> {
+    fn test_newest_collection() -> Result<()> {
         let path = resource_path("");
         let newest = Collection::from_dir(path)?.to_map()?.newest(1);
         assert_eq!(newest.into_iter().count(), 3);
@@ -115,6 +115,9 @@ mod test {
     fn test_bad_path() {
         let path = resource_path("not-found");
         let maybe_collection = Collection::from_dir(path);
-        assert!(matches!(maybe_collection, Err(DocumentError::SetError(_))))
+        assert!(matches!(
+            maybe_collection,
+            Err(Error::DirectoryReadError(_))
+        ))
     }
 }

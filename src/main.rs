@@ -1,23 +1,6 @@
-extern crate clap;
-extern crate directories;
-extern crate kuchiki;
-extern crate lazycell;
-extern crate num_cpus;
-extern crate pipeliner;
+use rfz::{Cli, Defaults, Result};
 
-mod cli;
-mod cmd;
-mod document;
-mod document_set;
-mod errors;
-
-#[cfg(test)]
-mod test;
-
-use cli::{Cli, Defaults};
-use errors::DocumentError;
-
-fn main() -> Result<(), DocumentError> {
+fn main() -> Result<()> {
     let defaults = Defaults::get()?;
     let cli = Cli::init(&defaults);
     cli.run()

@@ -2,26 +2,30 @@ use std::convert::From;
 use std::io;
 
 #[derive(Debug)]
-pub enum DocumentError {
+pub enum Error {
     SyncError(io::Error),
-    UserDirectories,
-    NotFound,
-    ParseError(io::Error),
-    MetadataNotFound,
-    MetadataRetrieval,
+    UserDirectories(String),
+    ImplementationNotFound(String),
+    CliError(String),
+    DocumentNotFound(String),
+    DocumentParseError(io::Error),
+    MetadataRetrieval(String),
+    MetadataNotFound(String),
     DuplicateAttribute(String),
-    AttributeType(String),
-    SetError(io::Error),
+    AttributeTypeMismatch(String),
+    DirectoryReadError(io::Error),
 }
 
-impl From<io::Error> for DocumentError {
-    fn from(err: io::Error) -> DocumentError {
-        DocumentError::ParseError(err)
+impl From<io::Error> for Error {
+    fn from(err: io::Error) -> Self {
+        Error::DocumentParseError(err)
     }
 }
 
-impl From<()> for DocumentError {
-    fn from(_: ()) -> DocumentError {
-        DocumentError::MetadataNotFound
+impl From<()> for Error {
+    fn from(_: ()) -> Self {
+        Error::MetadataNotFound("No <meta/> tags found in document <head/>".to_string())
     }
 }
+
+pub type Result<T> = std::result::Result<T, Error>;
