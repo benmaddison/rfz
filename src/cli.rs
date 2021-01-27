@@ -44,7 +44,6 @@ impl DefaultsProvider for Defaults {
     }
 }
 
-#[derive(Debug)]
 pub struct Cli<'a>(clap::ArgMatches<'a>);
 
 impl<'a> Cli<'a> {

@@ -7,7 +7,6 @@ use std::vec;
 use crate::document::Document;
 use crate::errors::{Error, Result};
 
-#[derive(Debug)]
 pub struct Collection(Vec<Document>);
 
 impl Collection {
@@ -78,7 +77,6 @@ impl<'a> IntoIterator for &'a Collection {
     }
 }
 
-#[derive(Debug)]
 struct CollectionMap<'a>(HashMap<&'a String, BTreeMap<&'a i8, &'a Document>>);
 
 impl CollectionMap<'_> {
