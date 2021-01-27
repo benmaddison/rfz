@@ -7,8 +7,8 @@ extern crate pipeliner;
 
 mod cli;
 mod cmd;
+mod collection;
 mod document;
-mod document_set;
 mod errors;
 
 #[cfg(test)]

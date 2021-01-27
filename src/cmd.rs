@@ -4,8 +4,8 @@ use std::process::Command;
 
 use pipeliner::Pipeline;
 
+use crate::collection::Collection;
 use crate::document::Document;
-use crate::document_set::Collection;
 use crate::errors::{Error, Result};
 
 pub trait ArgProvider {
