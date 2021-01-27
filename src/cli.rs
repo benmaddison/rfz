@@ -1,9 +1,11 @@
 use std::ffi::{OsStr, OsString};
+use std::path::PathBuf;
+use std::str::FromStr;
 
 use clap::{crate_authors, crate_description, crate_name, crate_version};
 use directories::ProjectDirs;
 
-use crate::cmd::select;
+use crate::cmd::{select, ArgProvider};
 use crate::errors::DocumentError;
 
 pub trait DefaultsProvider {
@@ -112,12 +114,42 @@ impl<'a> Cli<'a> {
     pub fn run(&self) -> Result<(), DocumentError> {
         let (func, args) = match self.0.subcommand() {
             (subcommand, Some(sub_matches)) => match select(subcommand) {
-                Some(command) => (command, sub_matches.to_owned()),
+                Some(command) => (command, CliArgs::from(sub_matches)),
                 None => return Err(DocumentError::NotFound),
             },
             _ => return Err(DocumentError::NotFound),
         };
         func(&args)
+    }
+}
+
+struct CliArgs<'a>(&'a clap::ArgMatches<'a>);
+
+impl<'a> CliArgs<'a> {
+    fn from(sub_matches: &'a clap::ArgMatches<'a>) -> Self {
+        CliArgs(sub_matches)
+    }
+}
+
+impl ArgProvider for CliArgs<'_> {
+    fn jobs(&self) -> usize {
+        usize::from_str(self.0.value_of("jobs").unwrap()).unwrap()
+    }
+
+    fn dir(&self) -> PathBuf {
+        PathBuf::from(self.0.value_of("dir").unwrap())
+    }
+
+    fn path(&self) -> PathBuf {
+        PathBuf::from(self.0.value_of("doc").unwrap())
+    }
+
+    fn rsync_cmd(&self) -> &str {
+        self.0.value_of("command").unwrap()
+    }
+
+    fn rsync_remote(&self) -> &str {
+        self.0.value_of("remote").unwrap()
     }
 }
 
