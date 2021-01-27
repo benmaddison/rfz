@@ -186,7 +186,7 @@ mod test {
         };
         match CmdExec::init("invalid", &args) {
             Err(Error::ImplementationNotFound(_)) => (),
-            _ => panic!("Expected ImplementationNotFound error")
+            _ => panic!("Expected ImplementationNotFound error"),
         }
     }
 
@@ -202,7 +202,7 @@ mod test {
         let exec = CmdExec::init("summary", &args).unwrap();
         match exec.run() {
             Err(Error::DocumentNotFound(_)) => (),
-            _ => panic!("Expected DocumentNotFound error")
+            _ => panic!("Expected DocumentNotFound error"),
         }
     }
 }
