@@ -45,5 +45,6 @@ rfz index | fzf \
             --ansi \
             # show the document metadata in the preview
             --preview 'rfz summary {1}' \
+          | cut -d' ' -f1 \
           | lynx -
 ```
