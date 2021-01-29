@@ -78,10 +78,22 @@ impl<'a> Cli<'a> {
                     .default_value_os(defaults.dir())
                     .help("Directory containing IETF html docs"),
             )
-            .subcommand(clap::SubCommand::with_name("index").about(
-                "List the latest version of each document \
-                 with associated metadata",
-            ))
+            .subcommand(
+                clap::SubCommand::with_name("index")
+                    .about(
+                        "List the latest version of each document \
+                         with associated metadata",
+                    )
+                    .arg(
+                        clap::Arg::with_name("type")
+                            .short("t")
+                            .long("type")
+                            .takes_value(true)
+                            .multiple(true)
+                            .possible_values(&["draft", "rfc", "bcp", "std"])
+                            .help("Limit output by document type"),
+                    ),
+            )
             .subcommand(
                 clap::SubCommand::with_name("summary")
                     .about("Print a summary of the metadata in <doc>")
@@ -155,6 +167,13 @@ impl ArgProvider for CliArgs<'_> {
     fn rsync_remote(&self) -> &str {
         self.0.value_of("remote").unwrap()
     }
+
+    fn types(&self) -> Option<Vec<&str>> {
+        match self.0.values_of("type") {
+            Some(values) => Some(values.collect()),
+            None => None,
+        }
+    }
 }
 
 #[cfg(test)]
@@ -204,6 +223,24 @@ mod test {
                 let cli_args = CliArgs::from(args);
                 assert_eq!(cli_args.jobs(), 1);
                 assert_eq!(cli_args.dir(), PathBuf::from("/home/foo/rfz"));
+                assert_eq!(cli_args.types(), None);
+            }
+            _ => panic!("Cli parsing failed"),
+        }
+    }
+
+    #[test]
+    fn test_dummy_index_filtered() {
+        let defaults = DummyDefaults {};
+        let argv = Some(vec!["rfz", "index", "--type", "rfc"]);
+        let cli = Cli::init_from(&defaults, argv).unwrap();
+        match cli.0.subcommand() {
+            (subcommand, Some(args)) => {
+                assert_eq!(subcommand, "index");
+                let cli_args = CliArgs::from(args);
+                assert_eq!(cli_args.jobs(), 1);
+                assert_eq!(cli_args.dir(), PathBuf::from("/home/foo/rfz"));
+                assert_eq!(cli_args.types(), Some(vec!["rfc"]));
             }
             _ => panic!("Cli parsing failed"),
         }

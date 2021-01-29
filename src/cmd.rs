@@ -14,6 +14,7 @@ pub trait ArgProvider {
     fn path(&self) -> PathBuf;
     fn rsync_cmd(&self) -> &str;
     fn rsync_remote(&self) -> &str;
+    fn types(&self) -> Option<Vec<&str>>;
 }
 
 type Cmd = fn(&dyn ArgProvider) -> Result<()>;
@@ -55,6 +56,7 @@ fn index(args: &dyn ArgProvider) -> Result<()> {
     #[cfg(test)]
     let mut writer = std::io::sink();
     for result in collection
+        .filter_types(args.types())
         .newest(1)
         .with_threads(args.jobs())
         .map(|doc| doc.fmt_line())
@@ -116,6 +118,7 @@ mod test {
         path: Option<PathBuf>,
         rsync_cmd: Option<String>,
         rsync_remote: Option<String>,
+        types: Option<Vec<&'static str>>,
     }
 
     impl ArgProvider for DummyArgs {
@@ -134,6 +137,9 @@ mod test {
         fn rsync_remote(&self) -> &str {
             self.rsync_remote.as_ref().unwrap()
         }
+        fn types(&self) -> Option<Vec<&str>> {
+            self.types.to_owned()
+        }
     }
 
     #[test]
@@ -144,6 +150,7 @@ mod test {
             path: None,
             rsync_cmd: None,
             rsync_remote: None,
+            types: None,
         };
         let exec = CmdExec::init("index", &args)?;
         exec.run()
@@ -157,6 +164,7 @@ mod test {
             path: Some(resource_path("rfc6468.html")),
             rsync_cmd: None,
             rsync_remote: None,
+            types: None,
         };
         let exec = CmdExec::init("summary", &args)?;
         exec.run()
@@ -170,6 +178,7 @@ mod test {
             path: None,
             rsync_cmd: Some(String::from("/bin/true")),
             rsync_remote: Some(String::from("rsync.example.com::dummy")),
+            types: None,
         };
         let exec = CmdExec::init("sync", &args)?;
         exec.run()
@@ -183,6 +192,7 @@ mod test {
             path: None,
             rsync_cmd: None,
             rsync_remote: None,
+            types: None,
         };
         match CmdExec::init("invalid", &args) {
             Err(Error::ImplementationNotFound(_)) => (),
@@ -198,6 +208,7 @@ mod test {
             path: Some(resource_path("not-found")),
             rsync_cmd: None,
             rsync_remote: None,
+            types: None,
         };
         let exec = CmdExec::init("summary", &args).unwrap();
         match exec.run() {

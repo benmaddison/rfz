@@ -7,6 +7,7 @@ use std::vec;
 use crate::document::Document;
 use crate::errors::{Error, Result};
 
+#[derive(Clone)]
 pub struct Collection(Vec<Document>);
 
 impl Collection {
@@ -38,6 +39,18 @@ impl Collection {
 
     pub fn newest(&self, count: u8) -> Self {
         self.to_map().newest(count)
+    }
+
+    pub fn filter_types(&self, types: Option<Vec<&str>>) -> Self {
+        match types {
+            Some(types) => Collection(
+                self.into_iter()
+                    .filter(|&doc| types.iter().any(|t| doc.id().starts_with(t)))
+                    .map(|doc| doc.to_owned())
+                    .collect(),
+            ),
+            None => self.to_owned(),
+        }
     }
 
     fn to_map(&self) -> CollectionMap {
@@ -110,6 +123,15 @@ mod test {
         let path = resource_path("");
         let newest = Collection::from_dir(path)?.newest(1);
         assert_eq!(newest.into_iter().count(), 3);
+        Ok(())
+    }
+
+    #[test]
+    fn test_type_filter() -> Result<()> {
+        let path = resource_path("");
+        let types = Some(vec!["rfc", "bcp"]);
+        let filtered = Collection::from_dir(path)?.filter_types(types);
+        assert_eq!(filtered.into_iter().count(), 1);
         Ok(())
     }
 
