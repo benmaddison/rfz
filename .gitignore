@@ -1,3 +1,9 @@
+# build artifacts
 /target
+
+# profiling artifacts
 perf.data
+
+# coverage artifacts
 *.profraw
+.coverage/
