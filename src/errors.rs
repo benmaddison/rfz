@@ -3,17 +3,17 @@ use std::io;
 
 #[derive(Debug)]
 pub enum Error {
-    SyncError(io::Error),
-    UserDirectories(String),
-    ImplementationNotFound(String),
+    AttributeTypeMismatch(String),
     CliError(String),
+    DirectoryReadError(io::Error),
     DocumentNotFound(String),
     DocumentParseError(io::Error),
-    MetadataRetrieval(String),
-    MetadataNotFound(String),
     DuplicateAttribute(String),
-    AttributeTypeMismatch(String),
-    DirectoryReadError(io::Error),
+    ImplementationNotFound(String),
+    MetadataNotFound(String),
+    MetadataRetrieval(String),
+    SyncError(io::Error),
+    UserDirectories(String),
 }
 
 impl From<io::Error> for Error {
