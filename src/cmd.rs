@@ -11,6 +11,7 @@ use crate::errors::{Error, Result};
 pub trait ArgProvider {
     fn jobs(&self) -> usize;
     fn dir(&self) -> PathBuf;
+    fn verbosity(&self) -> usize;
     fn path(&self) -> PathBuf;
     fn rsync_cmd(&self) -> &str;
     fn rsync_remote(&self) -> &str;
@@ -90,16 +91,18 @@ fn summary(args: &dyn ArgProvider) -> Result<()> {
 }
 
 fn sync(args: &dyn ArgProvider) -> Result<()> {
-    let status = Command::new(args.rsync_cmd())
-        .arg("--archive")
+    let mut proc = Command::new(args.rsync_cmd());
+    if args.verbosity() > 0 {
+        proc.arg(format!("-{}", "v".repeat(args.verbosity())));
+    }
+    proc.arg("--archive")
         .arg("--compress")
-        .arg("--progress")
         .arg("--include=*.html")
         .arg("--exclude=**")
         .arg("--prune-empty-dirs")
         .arg(args.rsync_remote())
-        .arg(args.dir())
-        .status();
+        .arg(args.dir());
+    let status = proc.status();
     match status {
         Ok(_) => Ok(()),
         Err(e) => Err(Error::SyncError(e)),
@@ -115,6 +118,7 @@ mod test {
     struct DummyArgs {
         jobs: Option<usize>,
         dir: Option<PathBuf>,
+        verbosity: usize,
         path: Option<PathBuf>,
         rsync_cmd: Option<String>,
         rsync_remote: Option<String>,
@@ -127,6 +131,9 @@ mod test {
         }
         fn dir(&self) -> PathBuf {
             self.dir.as_ref().unwrap().to_owned()
+        }
+        fn verbosity(&self) -> usize {
+            self.verbosity.to_owned()
         }
         fn path(&self) -> PathBuf {
             self.path.as_ref().unwrap().to_owned()
@@ -147,6 +154,7 @@ mod test {
         let args = DummyArgs {
             jobs: Some(2),
             dir: Some(resource_path("")),
+            verbosity: 0,
             path: None,
             rsync_cmd: None,
             rsync_remote: None,
@@ -161,6 +169,7 @@ mod test {
         let args = DummyArgs {
             jobs: None,
             dir: None,
+            verbosity: 0,
             path: Some(resource_path("rfc6468.html")),
             rsync_cmd: None,
             rsync_remote: None,
@@ -175,6 +184,7 @@ mod test {
         let args = DummyArgs {
             jobs: None,
             dir: Some(resource_path("")),
+            verbosity: 2,
             path: None,
             rsync_cmd: Some(String::from("/bin/true")),
             rsync_remote: Some(String::from("rsync.example.com::dummy")),
@@ -189,6 +199,7 @@ mod test {
         let args = DummyArgs {
             jobs: None,
             dir: None,
+            verbosity: 0,
             path: None,
             rsync_cmd: None,
             rsync_remote: None,
@@ -205,6 +216,7 @@ mod test {
         let args = DummyArgs {
             jobs: None,
             dir: None,
+            verbosity: 0,
             path: Some(resource_path("not-found")),
             rsync_cmd: None,
             rsync_remote: None,

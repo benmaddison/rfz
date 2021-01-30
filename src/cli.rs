@@ -1,3 +1,4 @@
+use std::convert::TryInto;
 use std::ffi::{OsStr, OsString};
 use std::io::stdout;
 use std::path::PathBuf;
@@ -93,6 +94,13 @@ impl<'a> Cli<'a> {
                     .global(true)
                     .default_value_os(defaults.dir())
                     .help("Directory containing IETF html docs"),
+            )
+            .arg(
+                clap::Arg::with_name("verbosity")
+                    .short("v")
+                    .multiple(true)
+                    .global(true)
+                    .help("Increase output verbosity"),
             )
             .subcommand(
                 clap::SubCommand::with_name("completions")
@@ -190,6 +198,13 @@ impl ArgProvider for CliArgs<'_> {
 
     fn dir(&self) -> PathBuf {
         PathBuf::from(self.0.value_of("dir").unwrap())
+    }
+
+    fn verbosity(&self) -> usize {
+        match self.0.occurrences_of("verbosity").try_into() {
+            Ok(n) => n,
+            Err(_) => usize::MAX,
+        }
     }
 
     fn path(&self) -> PathBuf {
@@ -300,7 +315,7 @@ mod test {
     #[test]
     fn test_dummy_sync() {
         let defaults = DummyDefaults {};
-        let argv = Some(vec!["rfz", "sync"]);
+        let argv = Some(vec!["rfz", "sync", "-v"]);
         let cli = Cli::init_from(&defaults, argv).unwrap();
         match cli.args.subcommand() {
             (subcommand, Some(args)) => {
@@ -308,6 +323,7 @@ mod test {
                 let cli_args = CliArgs::from(args);
                 assert_eq!(cli_args.rsync_cmd(), "rsync");
                 assert_eq!(cli_args.rsync_remote(), "rsync.tools.ietf.org::tools.html");
+                assert_eq!(cli_args.verbosity(), 1)
             }
             _ => panic!("Cli parsing failed"),
         }
