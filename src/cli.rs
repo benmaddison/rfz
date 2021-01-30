@@ -1,4 +1,5 @@
 use std::ffi::{OsStr, OsString};
+use std::io::stdout;
 use std::path::PathBuf;
 use std::result;
 use std::str::FromStr;
@@ -44,7 +45,10 @@ impl DefaultsProvider for Defaults {
     }
 }
 
-pub struct Cli<'a>(clap::ArgMatches<'a>);
+pub struct Cli<'a> {
+    defaults: &'a dyn DefaultsProvider,
+    args: clap::ArgMatches<'a>,
+}
 
 impl<'a> Cli<'a> {
     pub fn init(defaults: &'a dyn DefaultsProvider) -> Self {
@@ -58,7 +62,19 @@ impl<'a> Cli<'a> {
         defaults: &'a dyn DefaultsProvider,
         argv: Option<Vec<&str>>,
     ) -> result::Result<Self, clap::Error> {
-        let app = clap::app_from_crate!()
+        let app = Cli::build_cli(defaults);
+        let args = match argv {
+            Some(argv) => app.get_matches_from_safe(argv),
+            None => app.get_matches_safe(),
+        };
+        Ok(Cli {
+            defaults,
+            args: args?,
+        })
+    }
+
+    fn build_cli(defaults: &'a dyn DefaultsProvider) -> clap::App {
+        clap::app_from_crate!()
             .setting(clap::AppSettings::SubcommandRequired)
             .arg(
                 clap::Arg::with_name("jobs")
@@ -77,6 +93,16 @@ impl<'a> Cli<'a> {
                     .global(true)
                     .default_value_os(defaults.dir())
                     .help("Directory containing IETF html docs"),
+            )
+            .subcommand(
+                clap::SubCommand::with_name("completions")
+                    .about("Print shell completion script")
+                    .arg(
+                        clap::Arg::with_name("shell")
+                            .required(true)
+                            .possible_values(&clap::Shell::variants())
+                            .help("Shell for which to generate completion script"),
+                    ),
             )
             .subcommand(
                 clap::SubCommand::with_name("index")
@@ -119,16 +145,12 @@ impl<'a> Cli<'a> {
                             .default_value("rsync")
                             .help("Rsync command"),
                     ),
-            );
-        let args = match argv {
-            Some(argv) => app.get_matches_from_safe(argv),
-            None => app.get_matches_safe(),
-        };
-        Ok(Cli(args?))
+            )
     }
 
     pub fn run(&self) -> Result<()> {
-        match self.0.subcommand() {
+        match self.args.subcommand() {
+            ("completions", Some(sub_matches)) => self.print_completions(sub_matches),
             (subcommand, Some(sub_matches)) => {
                 let args = CliArgs::from(sub_matches);
                 let exec = CmdExec::init(subcommand, &args)?;
@@ -136,6 +158,17 @@ impl<'a> Cli<'a> {
             }
             _ => Err(Error::CliError("No sub-command was found".to_string())),
         }
+    }
+
+    fn print_completions(&self, sub_matches: &clap::ArgMatches) -> Result<()> {
+        let shell = clap::Shell::from_str(sub_matches.value_of("shell").unwrap()).unwrap();
+        let mut app = Cli::build_cli(self.defaults);
+        let _stdout = stdout();
+        #[cfg(not(test))]
+        let mut writer = _stdout.lock();
+        #[cfg(test)]
+        let mut writer = std::io::sink();
+        Ok(app.gen_completions_to(crate_name!(), shell, &mut writer))
     }
 }
 
@@ -217,7 +250,7 @@ mod test {
         let defaults = DummyDefaults {};
         let argv = Some(vec!["rfz", "index"]);
         let cli = Cli::init_from(&defaults, argv).unwrap();
-        match cli.0.subcommand() {
+        match cli.args.subcommand() {
             (subcommand, Some(args)) => {
                 assert_eq!(subcommand, "index");
                 let cli_args = CliArgs::from(args);
@@ -234,7 +267,7 @@ mod test {
         let defaults = DummyDefaults {};
         let argv = Some(vec!["rfz", "index", "--type", "rfc"]);
         let cli = Cli::init_from(&defaults, argv).unwrap();
-        match cli.0.subcommand() {
+        match cli.args.subcommand() {
             (subcommand, Some(args)) => {
                 assert_eq!(subcommand, "index");
                 let cli_args = CliArgs::from(args);
@@ -251,7 +284,7 @@ mod test {
         let defaults = DummyDefaults {};
         let argv = Some(vec!["rfz", "summary", "/home/foo/rfz/bar.html"]);
         let cli = Cli::init_from(&defaults, argv).unwrap();
-        match cli.0.subcommand() {
+        match cli.args.subcommand() {
             (subcommand, Some(args)) => {
                 assert_eq!(subcommand, "summary");
                 let cli_args = CliArgs::from(args);
@@ -266,7 +299,7 @@ mod test {
         let defaults = DummyDefaults {};
         let argv = Some(vec!["rfz", "sync"]);
         let cli = Cli::init_from(&defaults, argv).unwrap();
-        match cli.0.subcommand() {
+        match cli.args.subcommand() {
             (subcommand, Some(args)) => {
                 assert_eq!(subcommand, "sync");
                 let cli_args = CliArgs::from(args);
@@ -284,5 +317,24 @@ mod test {
         let argv = Some(vec!["rfz", "index", "-d", dir.to_str().unwrap()]);
         let cli = Cli::init_from(&defaults, argv).unwrap();
         cli.run()
+    }
+
+    #[test]
+    fn test_exec_completions() -> Result<()> {
+        let defaults = Defaults::get()?;
+        let argv = Some(vec!["rfz", "completions", "bash"]);
+        let cli = Cli::init_from(&defaults, argv).unwrap();
+        cli.run()
+    }
+
+    #[test]
+    fn test_exec_unknown_shell() -> Result<()> {
+        let defaults = Defaults::get()?;
+        let argv = Some(vec!["rfz", "completions", "crash"]);
+        match Cli::init_from(&defaults, argv) {
+            Err(e) => assert_eq!(e.kind, clap::ErrorKind::InvalidValue),
+            Ok(_) => panic!("Expected InvalidValue Error"),
+        };
+        Ok(())
     }
 }
