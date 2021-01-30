@@ -150,7 +150,10 @@ impl<'a> Cli<'a> {
 
     pub fn run(&self) -> Result<()> {
         match self.args.subcommand() {
-            ("completions", Some(sub_matches)) => self.print_completions(sub_matches),
+            ("completions", Some(sub_matches)) => {
+                self.print_completions(sub_matches);
+                Ok(())
+            }
             (subcommand, Some(sub_matches)) => {
                 let args = CliArgs::from(sub_matches);
                 let exec = CmdExec::init(subcommand, &args)?;
@@ -160,7 +163,7 @@ impl<'a> Cli<'a> {
         }
     }
 
-    fn print_completions(&self, sub_matches: &clap::ArgMatches) -> Result<()> {
+    fn print_completions(&self, sub_matches: &clap::ArgMatches) {
         let shell = clap::Shell::from_str(sub_matches.value_of("shell").unwrap()).unwrap();
         let mut app = Cli::build_cli(self.defaults);
         let _stdout = stdout();
@@ -168,7 +171,7 @@ impl<'a> Cli<'a> {
         let mut writer = _stdout.lock();
         #[cfg(test)]
         let mut writer = std::io::sink();
-        Ok(app.gen_completions_to(crate_name!(), shell, &mut writer))
+        app.gen_completions_to(crate_name!(), shell, &mut writer);
     }
 }
 
