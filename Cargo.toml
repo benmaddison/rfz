@@ -1,6 +1,6 @@
 [package]
 name = "rfz"
-version = "0.2.0-dev0"
+version = "0.2.0"
 authors = ["Ben Maddison <benm@workonline.africa>"]
 edition = "2018"
 description = "An indexer and metadata viewer for repositories of IETF documents synced to the local file system."
